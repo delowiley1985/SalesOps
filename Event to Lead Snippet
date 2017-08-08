@@ -2,7 +2,7 @@
 //Apex Class
 //------------------------------------------------------------------------------------------------
  
-public with sharing class LeadLastActivitySubject {
+public with sharing class Assigned_SE {
  
     public static String ldPrefix =  Lead.sObjectType.getDescribe().getKeyPrefix();
  
