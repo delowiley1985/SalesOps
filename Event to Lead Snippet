@@ -1,0 +1,94 @@
+//------------------------------------------------------------------------------------------------
+//Apex Class
+//------------------------------------------------------------------------------------------------
+ 
+public with sharing class LeadLastActivitySubject {
+ 
+    public static String ldPrefix =  Lead.sObjectType.getDescribe().getKeyPrefix();
+ 
+public static void updateLeadLastActivitySubject(Set<ID> leadIds){
+ 
+//Query all Leads and task-event child relationships
+        List<Lead> Leads = [SELECT Id, Last_Activity_Subject__c, (SELECT Id, Subject, ActivityDate FROM Tasks order by ActivityDate Desc limit 1), (SELECT Id, Subject, ActivityDate FROM Events order by ActivityDate Desc limit 1) FROM Lead WHERE ID IN :leadIds]
+        List<Lead> updateLeads = new List<Lead>();
+ 
+for (Lead l : Leads) {
+//LOGIC to determine most recent task or event and update Lead.Last_Activity_Subject__c field
+}
+ 
+try {
+update updateLeads;
+}
+catch (Exception e) {
+}
+}
+}
+ 
+//------------------------------------------------------------------------------------------------
+//Apex Task Trigger
+//------------------------------------------------------------------------------------------------
+ 
+trigger TaskUpdateLeadLastActivitySubject on Task (after delete, after insert, after undelete, after update) {
+ 
+Set<ID> ldIds = new Set<ID>();
+//Isolate Tasks linked to leads
+String prefix = LeadLastActivitySubject.ldPrefix;
+ 
+//Adds lead ids coming from new data
+    if (Trigger.new != null) {
+        for (Task t : Trigger.new) {
+            if (t.WhoId != null && String.valueOf(t.whoId).startsWith(prefix) ) {
+                ldIds.add(t.whoId);
+            }
+        }
+    }
+ 
+    //Adds lead ids coming from old data (deletes, moving an activity from one lead to another)
+    if (Trigger.old != null) {
+        for (Task t : Trigger.old) {
+            if (t.WhoId != null && String.valueOf(t.whoId).startsWith(prefix) ) {
+                ldIds.add(t.whoId);
+            }
+        }
+    }
+ 
+//LOGIC MAY BE WRONG HERE
+if (ldIds.size() > 0)
+LeadLastActivitySubject.updateLeadLastActivitySubject(ldIds);
+ 
+}
+ 
+ 
+//------------------------------------------------------------------------------------------------
+//Apex Event Trigger
+//------------------------------------------------------------------------------------------------
+ 
+trigger EventUpdateLeadLastActivitySubject on Event (after delete, after insert, after undelete, after update) {
+ 
+    Set<ID> ldIds = new Set<ID>();
+ 
+//Isolate Events linked to leads
+    String prefix = LeadActivityCount.ldPrefix;
+ 
+    //Adds lead ids coming from new data
+    if (Trigger.new != null) {
+        for (Event e : Trigger.new) {
+            if (e.WhoId != null && String.valueOf(e.whoId).startsWith(prefix) ) {
+                ldIds.add(e.whoId);
+            }
+        }
+    }
+ 
+    //Adds lead ids coming from old data (deletes, moving an activity from one opportunity to another)
+    if (Trigger.old != null) {
+        for (Event e : Trigger.old) {
+            if (e.WhoId != null && String.valueOf(e.whoId).startsWith(prefix) ) {
+                ldIds.add(e.whoId);
+            }
+        }
+    }
+ 
+//LOGIC MAY BE WRONG HERE
+if (ldIds.size() > 0)
+LeadLastActivitySubject.updateLeadLastActivitySubject(ldIds);
+}
